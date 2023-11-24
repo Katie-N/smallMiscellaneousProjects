@@ -2,8 +2,11 @@
 -- https://www.schoolofhaskell.com/user/adlew/calculator Basic calculator tutorial in Haskell
 -- https://stackoverflow.com/a/13962931 Getting a substring in Haskell
 
+-- data CalculationError = UnknownOperator String | UnmatchedParentheses deriving Show
+
 -- This is necessary because I am using checks for the results of maybe such as "isJust" and "fromJust"
 import Data.Maybe
+import Data.Either
 
 -- Define the custom types we will use
 -- We want to make an operatorRegister that contains a string to represent the operation, and the function itself to apply
@@ -46,7 +49,7 @@ countParentheses string = [ (x,c) | x<-['(', ')'], let c = (length.filter (==x))
 -- I made this function by myself.
 -- It finds the substring inside the first pair of parentheses and evaluates it then returns the original string but with the parentheses part replaced with the evaluated string.
 -- Note, this function does not do error checking. It expects a well-formed string containing both opening and closing parentheses.
-handleParenth :: String -> String
+handleParenth :: String -> Either String String
 handleParenth stringExpression =
   let
       -- get a copy of the substring before the opening parentheses.
@@ -57,16 +60,22 @@ handleParenth stringExpression =
       -- It does this by dropping characters from the beginning of the stringExpression. The two +1s are for the opening and closing parentheses.
       afterExpression = drop (length beforeParentheses + 1 + length innerExpression + 1) stringExpression
       -- In case the result of the calculation does not return a valid Double
-      innerValueUnsafe = calculate innerExpression
+      innerValueUnsafe = calculate innerExpression -- Returns a Left string or Right double
       -- If the parentheses are empty then it will return 0.
-      innerValue = if isJust innerValueUnsafe then fromJust innerValueUnsafe else 0.0
+      -- This function assumes the string is well formed so we won't return an error message, just a default value of 0 which hopefully will never be returned.
+      -- innerValue = if isRight innerValueUnsafe then fromRight innerValueUnsafe else
   in
     -- return the original string but replace the parentheses with the value
-    beforeParentheses ++ show innerValue ++ afterExpression
+    if isRight innerValueUnsafe -- must be a Double
+      then
+        Right (beforeParentheses ++ show (fromRight 0 innerValueUnsafe) ++ afterExpression)
+      else
+        Left (fromLeft "Error: Unexpected error" innerValueUnsafe) -- this must be an error value so we will just pass it back
+    --Right beforeParentheses ++ show innerValue ++ afterExpression
 
 -- I made most of this function, particularly the part that handles parentheses.
 -- I modified the final else statement from https://www.schoolofhaskell.com/user/adlew/calculator
-calculate :: String -> Maybe Double
+calculate :: String -> Either String Double
 calculate stringExpression = if length (countParentheses stringExpression) > 0
   -- Handle parentheses
   -- If the string does have parentheses then the innermost expression should be done first following the order of operations.
@@ -79,21 +88,29 @@ calculate stringExpression = if length (countParentheses stringExpression) > 0
     if ((length (countParentheses stringExpression) == 2) && snd (countParentheses stringExpression !! 0) == (snd (countParentheses stringExpression !! 1)))
       then
         -- Replace the first term in parentheses with the equivalent value
-        let stringWithoutInnerParenth = handleParenth stringExpression
+        let unsafeStringWithoutInnerParenth = handleParenth stringExpression -- Returns a Left (error message string) or a Right (new string expression)
         -- recursively call calculate with the new string expression containing one less pair of parentheses
-        in calculate stringWithoutInnerParenth
-      else Nothing -- FIXME: put mismatched parentheses error here
+        -- Return it as the "Right" value of this function by extracting the "Right" value from the function call. fromRight takes a default value and the value to pass if it is of the "Right" type.
+        -- The default value shouldn't ever be passed because of our error checking up to this point. But it is required just in case.
+        in -- Right (fromRight 0 (calculate stringWithoutInnerParenth))
+
+          if isRight unsafeStringWithoutInnerParenth
+            then calculate (fromRight "0" unsafeStringWithoutInnerParenth)
+            -- unfortunately, even though this error is the same type and we know it must be an error, Haskell will not compile if we just return the unsafeStringWithoutInnerParenth
+            -- Instead we have to specifically pull out the Left value from it and return that
+            else Left (fromLeft "Error: Unexpected error" unsafeStringWithoutInnerParenth)
+      else Left "Error: Mismatched parentheses" -- mismatched parentheses error
   -- The string must not have any parentheses so evaluate it according to the regular order of operations
-  else eval operatorRegister (words stringExpression)
+  else Right (fromRight 0 (eval operatorRegister (words stringExpression)))
 
 -- We made a type called Register that is comprised of a tuple with the string that represents an operation and the function that executes the operation.
 -- So when calling eval we pass in a register tuple and a list of strings.
 -- The register tuple is just the operation that should be applied.
 -- The list of strings is the
-eval :: Register -> [String] -> Maybe Double
-eval [] _ = Nothing -- No operator found.
-eval _ [] = Nothing -- If a operator don't have anything to operate on.
-eval _ [number] = Just $ read number
+eval :: Register -> [String] -> Either String Double
+eval [] _ = Left "Error: No operator found" -- No operator found.
+eval _ [] = Left "Error: Missing argument for operator" -- If a operator don't have anything to operate on.
+eval _ [number] = Right $ read number
 eval ((operator, function):rest) unparsed =
     -- until we loop through the operator list and find the operator to use, continue searching
     case span (/=operator) unparsed of
@@ -101,6 +118,7 @@ eval ((operator, function):rest) unparsed =
         (beforeOperator, afterOperator) -> do -- added the do
           arg1 <- eval operatorRegister beforeOperator
           arg2 <- eval operatorRegister $ drop 1 afterOperator
-          Just (function arg1 arg2)
+          Right (function arg1 arg2)
 
-parse stringExpression = if isJust (calculate stringExpression) then fromJust (calculate stringExpression) else 0.0
+--parse stringExpression = if isRight (calculate stringExpression) then (calculate stringExpression) else 0.0
+parse stringExpression = calculate stringExpression
