@@ -101,14 +101,19 @@ calculate stringExpression = if length (countParentheses stringExpression) > 0
             else Left (fromLeft "Error: Unexpected error" unsafeStringWithoutInnerParenth)
       else Left "Error: Mismatched parentheses" -- mismatched parentheses error
   -- The string must not have any parentheses so evaluate it according to the regular order of operations
-  else Right (fromRight 0 (eval operatorRegister (words stringExpression)))
+  else
+    if isRight (eval operatorRegister (words stringExpression))
+      then
+        Right (fromRight 0 (eval operatorRegister (words stringExpression)))
+      else
+        Left (fromLeft "Error: Unexpected error" (eval operatorRegister (words stringExpression)))
 
 -- We made a type called Register that is comprised of a tuple with the string that represents an operation and the function that executes the operation.
 -- So when calling eval we pass in a register tuple and a list of strings.
 -- The register tuple is just the operation that should be applied.
 -- The list of strings is the
 eval :: Register -> [String] -> Either String Double
-eval [] _ = Left "Error: No operator found" -- No operator found.
+eval [] _ = Left "Error: Missing operator" -- No operator found.
 eval _ [] = Left "Error: Missing argument for operator" -- If a operator don't have anything to operate on.
 eval _ [number] = Right $ read number
 eval ((operator, function):rest) unparsed =
@@ -120,5 +125,10 @@ eval ((operator, function):rest) unparsed =
           arg2 <- eval operatorRegister $ drop 1 afterOperator
           Right (function arg1 arg2)
 
---parse stringExpression = if isRight (calculate stringExpression) then (calculate stringExpression) else 0.0
-parse stringExpression = calculate stringExpression
+-- parse stringExpression = if isRight (calculate stringExpression) then (calculate stringExpression) else 0.0
+-- Data MyType = String | Double
+parse :: String -> String
+-- This will return just the value from the Left or Right type
+-- The second parameter is the default value that it will return if calculate stringExpression is not Right
+-- parse stringExpression = fromRight (fromLeft "Error: Unexpected error" (calculate stringExpression)) (calculate stringExpression)
+parse stringExpression = if isRight (calculate stringExpression) then show (fromRight 0 (calculate stringExpression)) else fromLeft "Error: Unexpected error" (calculate stringExpression)
