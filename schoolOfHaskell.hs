@@ -1,9 +1,17 @@
+-- Program Name: EECS 468 Assignment 8
+-- Description: This program is a robust little calulator.
+  -- Input: parse "expression"
+  -- Output:
+    -- The evaluated expression respecting order of operation rules including parentheses and nested parentheses.
+    -- If an error occurs, it will instead return a descriptive error message.
+-- Collaborators: None
 -- Sources:
--- https://www.schoolofhaskell.com/user/adlew/calculator Basic calculator tutorial in Haskell
--- https://stackoverflow.com/a/13962931 Getting a substring in Haskell
+  -- https://www.schoolofhaskell.com/user/adlew/calculator Basic calculator tutorial in Haskell
+  -- https://stackoverflow.com/a/13962931 Getting a substring in Haskell
+-- Author: Katie Nordberg
+-- Date: 11/13/2023
 
--- This is necessary because I am using checks for the results of maybe such as "isJust" and "fromJust"
-import Data.Maybe
+-- This is necessary because I am using checks for the results of Either such as "isRight" and "fromRight"
 import Data.Either
 
 -- Define the custom types we will use
@@ -126,35 +134,65 @@ calculate stringExpression = if length (countParentheses stringExpression) > 0
   -- The string must not have any parentheses so evaluate it according to the regular order of operations
   -- I modified this from https://www.schoolofhaskell.com/user/adlew/calculator
   else
+    -- words takes a string and returns a list of substrings that were separated by whitespace
+    -- eval takes two arguments: an operation Register, and a list of strings with the pattern ["number", "operator", "number"]
     if isRight (eval operatorRegister (words stringExpression))
       then
         -- Return the evaluated expression
         Right (fromRight 0 (eval operatorRegister (words stringExpression)))
       else
         -- Return the error message
+        -- Note that we have to give a default error message in case the result is Right not Left.
+        -- But because we checked for Rightness, this default error message should hopefully never return.
+        -- And the error message within the called functions will be returned
         Left (fromLeft "Error: Unexpected error" (eval operatorRegister (words stringExpression)))
 
 
 -- We made a type called Register that is comprised of a tuple with the string that represents an operation and the function that executes the operation.
 -- So when calling eval we pass in a register tuple and a list of strings.
--- The register tuple is just the operation that should be applied.
--- The list of strings is the
+-- The register tuple is just all of the valid operations that can be applied.
+-- The list of strings is the expression separated by its whitespace and in the order the expression was given in
+-- This function will return Double if the evaluations had no errors. And if there was an error it will instead return a string (the error message)
+-- Either is a data type that uses the keyword Left to represent an error case and Right for a success case.
+-- It allows us to have error checking more easily and handle errors more gracefully than throwing exceptions
 eval :: Register -> [String] -> Either String Double
-eval [] _ = Left "Error: Missing operator" -- No operator found.
+eval [] _ = Left "Error: Missing operator" -- If eval is called with an empty operator register then there is no operator found.
 eval _ [] = Left "Error: Operators Without Operands" -- If a operator don't have anything to operate on. (Missing argument)
 eval _ [singleVal] =
   if elem singleVal ["+", "-", "*", "/", "%", "(", ")"]
-    then Left "Error: Operators Without Operands" -- singleVal is an operator (and has no numbers to operate on!) so we return an error
+    -- singleVal must be an operator (and has no numbers to operate on!) so we return an error
+    then Left "Error: Operators Without Operands"
     else Right (read singleVal) -- singleVal is just a number
-eval ((operator, function):rest) unparsed =
-    -- until we loop through the operator list and find the operator to use, continue searching
-    case span (/=operator) unparsed of
-        (_, []) -> eval rest unparsed -- Recursively call eval and pass in the rest of the tuple operators and the unparsed string
-        (beforeOperator, afterOperator) -> do -- added the do
-          arg1 <- eval operatorRegister beforeOperator
-          arg2 <- eval operatorRegister $ drop 1 afterOperator
-          Right (function arg1 arg2)
 
+eval ((operator, function):rest) unparsed = -- This is where most of the heavy lifting happens
+    -- loop through the operator list and find the operator to use
+      -- span takes a predicate (condition) and a list to check
+      -- It will loop through the list and check each element against the condition.
+      -- For each element in a row that matches the condition, it is put in one list
+      -- As soon as it hits an element that does not meet the condition, the rest of the list (even elements that do meet the condition) get put into a second list.
+      -- Then a tuple with the first list and second list is returned by span.
+    -- Essentially this means that the first element of the second list is the
+    case span (/=operator) unparsed of
+        -- This case is for when the operator was not found in the operatorRegister
+        -- This happens when the "operator" was actually a number not an operator. So we
+        (_, []) -> eval rest unparsed -- Recursively call eval and pass in the rest of the tuple operators and the unparsed string
+        -- I modified this part to not use control applicatives
+        -- The afterOperator list must not be empty so we will pattern match here
+        (beforeOperator, afterOperator) -> do
+          -- Recursively call eval on the string before the operator
+          arg1 <- eval operatorRegister beforeOperator
+          -- Recursively call eval on the string after the operator
+          -- drop 1 removes the matched operator so the unparsed string is left
+          arg2 <- eval operatorRegister (drop 1 afterOperator)
+          -- Because we recursively find the values of arg1 and arg2, and span matches elements UNTIL the condition is met, we are able to follow the order of operations
+          -- By this point, arg1 and arg2 are doubles so we can apply the matched function to them
+          -- Perform the operation on the first and second argument and return it as a Right value
+          Right (function arg1 arg2) -- function is the parameter name we defined in this pattern of eval
+
+-- I created this function
+-- It is what the user will interface with on the console
+-- Input: a typed string expression
+-- Output: The evaluated expression or a descriptive error message
 parse :: String -> String
 parse stringExpression =
   -- check that the characters in the string are all included in our valid characters list before attempting to evaluate
@@ -167,9 +205,13 @@ parse stringExpression =
       if isRight (calculate stringExpression) then show (fromRight 0 (calculate stringExpression))
         else fromLeft "Error: Unexpected error" (calculate stringExpression)
 
-    -- At least one character in the string is not allowed
+    -- At least one character in the string is not allowed. We return a string not a Left value (because this is getting returned to the user, not another function).
     else "Error: Invalid characters"
 
 -- Check if every character in the string is in the valid characters list
+-- all will return true when every item in a list meets a condition.
+  -- Our list is the passed string.
+  -- Our condition is that the character in the string is a member of the hardcoded list of valid characters
+-- If every character in the string expression passes this condition then return True
 validCharacters :: String -> Bool
 validCharacters string = all (`elem` ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ', '+', '-', '*', '/', '%', '(', ')']) string
