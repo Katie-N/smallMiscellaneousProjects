@@ -61,6 +61,7 @@ def bezout(xList, yList, rList):
     # These variables will store the values that we take out of the other terms so we can later add them back in and maintain the validity of the equation
     toCombineWithX = 0
     toCombineWithY = 0
+    b1Mults = []
     while yco != yList[0]:
         multipleOfX = 1
         # Update the y coefficient with the new decremented value of i
@@ -73,36 +74,56 @@ def bezout(xList, yList, rList):
         yBreakDown = ""
         # Print the terms outside the nested parentheses
         for j in range(len(separateTerms)):
-            yBreakDown += f"{separateTerms[j]} "
+            # Didn't work for case a) {separateTerms[j] // yList[j+1]}
+            # Narrowed it down to the multiplier being wrong: 1*166 - ___*(1*248 -1*166) where ___ should be 2 but is being evaluated as 1
+            yBreakDown += f"1*{separateTerms[j]} "
+            # print an opening parentheses if we are not on the last term
             if j != (len(separateTerms) - 1):
-                yBreakDown += "+ ("
+                yBreakDown += f"{b1Mults[j]}*("
 
-        # Continue adding to the string by appenging the rightmost term
-        # ")"*(len(separateTerms)-1) allows us to add the correct number of closing parentheses.
-        # There should be one less closing parentheses as there are terms in the separateTerms array.
-        # * is an overloaded operator in Python and when given a string,
-        # it will repeat the string a given number of times.
-        yBreakDown += f"{toCombineWithX}" + ")"*(len(separateTerms)-1)
+        # bMult1 is a variable to store the first number to be multiplied.
+        # It tells us how many times we multiply bMult2 which is a special number in the list of y values
+        bMult1 = toCombineWithX//yList[i]
+        b1Mults.append(bMult1)
+        #print(bMult1) # make array of bMult? solution to wrong strings
+        # bMult2 is a variable to store the second number to be multiplied. This is the second term found in the ith euclidean algorithm.
+        bMult2 = yList[i]
+
+        # Continue adding to the string by appending the rightmost term
+            # ")"*(len(separateTerms)-1) allows us to add the correct number of closing parentheses.
+            # There should be one less closing parentheses as there are terms in the separateTerms array.
+            # * is an overloaded operator in Python and when given a string,
+            # it will repeat the string the given number of times.
+        yBreakDown += f"{bMult1}*{bMult2}" + ")"*(len(separateTerms)-1)
         # print the string showing how y factors
         print(f"{rList[-2]} = {yBreakDown}")
+
         # Decrement i so the previous equation in the Euclidean algorithm will be used in the next run
         i -= 1
         # Increment rounds so we know how many runs we have done.
         rounds += 1
 
-    # yToBeCombinedWith stores the value of the second term
+    # yToBeCombinedWith stores the value of the second term in the parentheses multiplied by the coefficient outside the parentheses
     yToBeCombinedWith = - yco * (xList[-2]//yList[-2])
     # baseX combines the first term with the remaining terms (except for the yco*floor(a*b) term)
     baseX = xList[-2] - toCombineWithX
     # Now that we have combined everything we can from the second term with the first term, we can find s by dividing the combined term and a
-    s = baseX / xList[-2]
-    print(f"{rList[-2]} = {baseX} {yToBeCombinedWith}")
+    s = baseX // xList[-2]
+
+    # Separate the two terms into the form a*b + c*d
+    # We use the index -2 in xList[-2] because we haven't separated the first term into xList[0]*something yet
+    xMultiplier = baseX // xList[-2]
+    # We use the index 0 in yList[0] because we HAVE separated the second term into yList[0]*something
+    yMultiplier = yToBeCombinedWith // yList[0]
+
+    print(f"{rList[-2]} = {xMultiplier}*{xList[-2]} {yMultiplier}*{yList[0]}")
+
     print(f"We have found s = {s}")
 
     separateTerms = []
     # Repeat the same process but separate the first term this time
     # We already found s so we can get the first coefficient of x by dividing the combined term and s
-    xco = baseX / s
+    xco = baseX // s
     while xco != xList[0]:
         # Update the y coefficient with the new decremented value of i
         # We don't reinitialize i so it keeps the decremeneted value from the end of the y looping
@@ -113,15 +134,29 @@ def bezout(xList, yList, rList):
         toCombineWithY = - (xList[i]//yList[i]) * yList[i] * s
         # Make a string with the value of the left term and the right term
         # xBreakDown = f"{xco} {toCombineWithY}"
-        xBreakDown = f""
+        xBreakDown = ""
         # print the string showing how y factors
         # print(xBreakDown)
         # Print the terms outside the nested parentheses
-        for xTerm in separateTerms:
-            xBreakDown += f"{xTerm*s} "
-        xBreakDown += f"{toCombineWithY}"
+        for j in range(len(separateTerms)):
+            # always print an opening parentheses to separate the first and second terms
+            xBreakDown += f"{s}*({separateTerms[j]} "
+
+        #for xTerm in separateTerms:
+            #xBreakDown += f"{s}*{xTerm} "
+        aMult1 = toCombineWithY// yList[i]
+        aMult2 = yList[i]
+        #xBreakDown += f"{aMult1}*{aMult2}"
+
+        # Continue adding to the string by appending the rightmost term within the parentheses
+            # ")"*(len(separateTerms)) allows us to add the correct number of closing parentheses.
+            # * is an overloaded operator in Python and when given a string,
+            # it will repeat the string the given number of times.
+        xBreakDown += f"-{aMult2}" + ")"*(len(separateTerms))
+
         # print the string showing how x factors
-        print(f"{rList[-2]} = {xBreakDown}")
+        # To also print the y portion we include {yMultiplier}*{yList[0]}
+        print(f"{rList[-2]} = {xBreakDown} {yMultiplier}*{yList[0]}")
 
         # Decrement i so the previous equation in the Euclidean algorithm will be used in the next run
         i -= 1
@@ -131,9 +166,10 @@ def bezout(xList, yList, rList):
     # baseX combines the first term with the remaining terms (except for the yco*floor(a*b) term)
     finalY = yToBeCombinedWith + toCombineWithY
     # Now that we have combined everything we can from the first term with the second term, we can find t by dividing the combined term and b
-    t = finalY / yList[0]
+    t = finalY // yList[0]
+    print(f"{rList[-2]} = {s}*{xList[0]} {t}*{yList[0]}")
     print(f"We have found t = {t}")
-    print(f"Therefore s = {s} and t = {t} for a = {xList[0]} and b = {yList[0]} (Notice the order of a and b may be flipped from the input!)")
+    print(f"Therefore s = {s} and t = {t} for a = {xList[0]} and b = {yList[0]} (Note that the order of a and b may be flipped from the input!)")
 
     # print(f"{rList[-2]} = {xBreakDown} {yBreakDown}")
         # print("y fully factored")
