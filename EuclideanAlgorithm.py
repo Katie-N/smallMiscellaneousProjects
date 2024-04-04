@@ -1,13 +1,24 @@
 '''
 Program Name: EECS 210 Assignment 6
-Description:
-Inputs: None
+Description: This program finds the greatest common denominator using the Euclidean Algorithm. It also finds the Bezout coefficients in two different ways. The first way is by working backwards through the Euclidean Algorithm. The second way is by using the extended Euclidean Algorithm.
+Inputs: The program does not take any external inputs.
+    - The functions within the program for calculating the greatest common divisor take 2 positive integer inputs
 Output:
+    - The program outputs the current part being evaluated (either part 1, 2, or 3).
+        - Under each part, the current problem being evaluated is also output
+    - gcdRemainder outputs the greatest common divsor in the remainder format.
+    - gcdMethod1 outputs the greatest common divisor in the product sum format.
+    - bezout outputs each step of working backwards through the Euclidean Algorithm in the product sum format
+    - gcdMethod2 outputs each step of the extended Euclidean Algorithm. It also outputs the Bezout coefficients for the given numbers in the form gcd(a,b) = s*a + t*b.
 Collaborators: none
-Other sources:
+Other sources: none
 Author: Katie
 Creation Date: 3/29/2024
 '''
+
+# This is a helper function I will use to separate my problems and make it easier to distringuish between them
+def printDividor(amt=30):
+    print("-"*amt);
 
 # -----------PART 1-----------
 # 1. Calculate the Greatest Common Divisor using the Euclidean Algorithm
@@ -15,47 +26,72 @@ Creation Date: 3/29/2024
 def gcdRemainder(a, b):
     # The algorithm only works properly if it divides the larger value and not the smaller value.
     # So we get copies of the values and put them into x and y based on their size
-    x = max(a,b)
-    y = min(a,b)
+    x = max(a,b);
+    y = min(a,b);
     # We need a way to output which step we are on so i will keep track of the number of loops
-    i = 1
+    i = 1;
     # Loop until y (which will be the remainder) is 0
     while y != 0:
         # Get the remainder by utilizing the modulo operator
-        r = x % y
+        r = x % y;
         # 2. Show each step of the Euclidean Algorithm using the “remainder” format.
         # Note that // is the integer division operator in Python
         # It floors the division result to the nearest integer
-        print(f"Step {i}. {x}/{y} = {x//y} R {r}")
+        print(f"Step {i}. {x}/{y} = {x//y} R {r}");
         # Now we want to transfer the value of y into x
-        x = y
+        x = y;
         # Transfer the value of the remainder into y
-        y = r
+        y = r;
         # Increment the count
-        i += 1
+        i += 1;
     # 3. Display the final results as: "gcd(a,b) = n"
-    print(f"gcd({a}, {b}) = {x}")
+    print(f"gcd({a}, {b}) = {x}");
     # x now contains the GCD so we should return it
-    return x
+    return x;
 
 # 4. Test with the following inputs:
 # Tell the user which part is being evaluated
-print("Part 1")
+printDividor(45);
+print("Part 1");
+printDividor(45);
 # 4a.
+# Tell the user what problem we are on and then call the gcd function
 print("a) gcd(414, 662)")
 gcdRemainder(414, 662)
+# Print a new line
+print()
+printDividor();
+
 # 4b.
-print("\nb) gcd(6, 14)")
+# Tell the user what problem we are on and then call the gcd function
+print("b) gcd(6, 14)")
 gcdRemainder(6, 14)
+
+# Print a new line
+print()
+printDividor();
 # 4c.
-print("\nc) gcd(24, 36)")
+# Tell the user what problem we are on and then call the gcd function
+print("c) gcd(24, 36)")
 gcdRemainder(24, 36)
+
+# Print a new line
+print()
+printDividor();
 # 4d.
-print("\nd) gcd(12, 42)")
+# Tell the user what problem we are on and then call the gcd function
+print("d) gcd(12, 42)")
 gcdRemainder(12, 42)
+
+# Print a new line
+print()
+printDividor();
 # 4e.
-print("\ne) gcd(252, 198)")
+# Tell the user what problem we are on and then call the gcd function
+print("e) gcd(252, 198)")
 gcdRemainder(252, 198)
+# Print a new line
+print()
 
 # -----------PART 2-----------
 
@@ -170,9 +206,17 @@ def bezout(xList, yList, rList):
     # Repeat the same process but separate the first term this time
     # We already found s so we can get the first coefficient of x by dividing the combined term and s
     xco = baseX // s
+
+    # Make a flag to determine if we need to print the simplified result later on or not
+    # It will start as false but if any terms are separated (i.e. the while loop is entered) then it will switch to True.
+    printSimplified = False;
+
     # Loop through the list of terms until we simplify to xco == max(a,b)
     # (where a and b come from the function call gcd(a,b))
     while xco != xList[0]:
+        # We entered the loop so we are going to separate the terms.
+        # Therefore we will need to simplify later so we set the flag to True.
+        printSimplified = True;
         # Update the y coefficient with the new decremented value of i
         # We don't reinitialize i so it keeps the decremeneted value from the end of the y looping
         xco = xList[i]
@@ -216,10 +260,14 @@ def bezout(xList, yList, rList):
     t = finalY // yList[0]
 
     # 2. Show each step of the Euclidean Algorithm using the “product & sum” format.
-    # Print the results in the form gcd(a, b) = s*a + t*b
-    # For example, the first step for gcd(252, 198) would be: 252 = 198 * 1 + 54
-    print(f"{rList[-2]} = {s}*{xList[0]} {t}*{yList[0]}")
-    print(f"Therefore s = {s} and t = {t} for a = {xList[0]} and b = {yList[0]} (Note that the order of a and b may be flipped from the input!)")
+    if (printSimplified):
+        # Print the results in the form gcd(a, b) = s*a + t*b
+        print(f"{rList[-2]} = {s}*{xList[0]} {t}*{yList[0]}");
+    # If printSimplified is false then it has already been printed fully simplified in this product sum form right above so we don't need to do it again.
+    # Explicitely state the values
+    print(f"Therefore s = {s} and t = {t} for a = {xList[0]} and b = {yList[0]}")
+    print(f"gcd({xList[0]}, {yList[0]}) = {s}*{xList[0]} {t}*{yList[0]} = {rList[-2]}")
+    return [s,t]
 
 # gcdMethod1 is a function that finds the greatest common denominator
 # of two numbers, a and b, by using the Euclidean Algorithm.
@@ -249,27 +297,32 @@ def gcdMethod1(a, b):
         r = x % y
         # Add the current value of r to the list
         rValues.append(r)
-        # 2. Show each step of the Euclidean Algorithm using the “remainder” format.
+        # 2. Show each step of the Euclidean Algorithm using the product sum format.
         # Note that // is the integer division operator in Python
         # It floors the division result to the nearest integer
-        print(f"Step {i}. {x}/{y} = {x//y} R {r}")
+        print(f"Step {i}. {x} = {y}*{x//y} + {r}");
 
         # Now we want to transfer the value of y into x
-        x = y
+        x = y;
         # Transfer the value of the remainder into y
-        y = r
+        y = r;
         # Increment the count
-        i += 1
+        i += 1;
     # x now contains the GCD so we want to keep track of it
-    gcd = x
+    gcd = x;
+    # 3. Display the final results as: "gcd(a,b) = n"
+    print(f"gcd({a}, {b}) = {gcd}");
 
     # Print a new line to separate the forward pass and the backward pass
-    print()
+    print();
     # Call the bezout function and pass it the results from the algorithm
-    bezout(xValues, yValues, rValues)
+    sAndt = bezout(xValues, yValues, rValues);
+    if (a != max(a,b)):
+        # If a and b were flipped internally, we should reverse the flip and consequently also reverse s and t according to the original a and b
+        print(f"(But according to the original input order of a = {a} and b = {b}, s = {sAndt[1]} and t = {sAndt[0]})");
+        # Print gcd(a,b) = sa + tb with respect to the original order of a and b
+        print(f"gcd({a},{b}) = {sAndt[1]}*{a} + {sAndt[0]}*{b} = {gcd}");
 
-    # 3. Display the final results as: "gcd(a,b) = n"
-    print(f"gcd({a}, {b}) = {gcd}")
     # Return the final result of the greatest common denominator
     return gcd
 
@@ -282,35 +335,192 @@ def gcdMethod1(a, b):
     # 18 = 4 * 252 − 5 * 198
 # 4. Show the final results as "gcd(a, b) = s*a + t*b"
 # 5. Test with the following inputs:
-print("Part 2")
+printDividor(45);
+print("Part 2");
+printDividor(45);
+
 # 5a.
-print("a) gcd(414, 662)")
-gcdMethod1(414, 662)
+# Tell the user what problem we are on and then call the gcd function
+print("a) gcd(414, 662)");
+gcdMethod1(414, 662);
+# Print a new line
+print();
+printDividor();
+
 # 5b.
-print("\nb) gcd(6, 14)")
-gcdMethod1(6, 14)
+# Tell the user what problem we are on and then call the gcd function
+print("b) gcd(6, 14)");
+gcdMethod1(6, 14);
+# Print a new line
+print();
+printDividor();
+
 # 5c.
-print("\nc) gcd(24, 36)")
-gcdMethod1(24, 36)
+# Tell the user what problem we are on and then call the gcd function
+print("c) gcd(24, 36)");
+gcdMethod1(24, 36);
+# print a new line
+print();
+printDividor();
+
 # 5d.
-print("\nd) gcd(12, 42)")
-gcdMethod1(12, 42)
+# Tell the user what problem we are on and then call the gcd function
+print("d) gcd(12, 42)");
+gcdMethod1(12, 42);
+# Print a new line
+print();
+printDividor();
+
 # 5e.
-print("\ne) gcd(252, 198)")
-gcdMethod1(252, 198)
+# Tell the user what problem we are on and then call the gcd function
+print("e) gcd(252, 198)");
+gcdMethod1(252, 198);
 
 # -----------PART 3-----------
 # 1. Express gcd(a, b) as a linear combination: gcd(a, b) = sa + tb,
 # where s and t are Bézout coefficients of a and b, using the extended Euclidean Algorithm (Method 2).
-# 2. Show the quotients q1 through qj and then the calculations for sj and tj.
-# For example for gcd(252, 198):
-    # q1 = 1, q2 = 3, q3 = 1, and q4 = 2
-    # s0 = 1, s1 = 0, s2 = s0 − s1*q1 = 1 − 0 * 1 = 1, etc.
-    # t0 = 0, t1 = 1, t2 = t0 − t1*q1 = 0 − 1 * 1 = −1, etc.
-# 3. Show the final results as "gcd(a, b) = s*a + t*b"
+def gcdMethod2(a, b):
+    s = [1,0]
+    t = [0,1]
+    q = [0] # There is no 0th quotient according to our lessons so we will put a 0 here
+
+    # The algorithm only works properly if it divides the larger value and not the smaller value.
+    # So we get copies of the values and put them into x and y based on their size
+    x = max(a,b)
+    y = min(a,b)
+    # We need a way to output which step we are on so i will keep track of the number of loops
+    i = 0
+    # Loop until y (which will be the remainder) is 0
+    while y != 0:
+        # Get the remainder by utilizing the modulo operator
+        r = x % y
+        # 2. Show each step of the Euclidean Algorithm using the product sum format.
+        # Note that // is the integer division operator in Python
+        # It floors the division result to the nearest integer
+        print(f"Step {i+1}. {x} = {y}*{x//y} + {r}");
+        q.append(x//y);
+
+        # Now we want to transfer the value of y into x
+        x = y;
+        # Transfer the value of the remainder into y
+        y = r;
+        # Increment the count
+        i += 1;
+    # 3. Display the final results as: "gcd(a,b) = n"
+    gcd = x;
+    print(f"gcd({a}, {b}) = {x}");
+
+    # 2. Show the quotients q1 through qj and then the calculations for sj and tj.
+    print("\nValues of q:");
+    # Loop through the values of q found above (recall q values start at q1 not q0)
+    for i in range(1, len(q)):
+        # Print out the current value of q
+        print(f"q{i} = {q[i]}");
+
+    # Show the steps to find sj
+    print("\nTo find s:");
+    # Loop through the number of quotients found
+    for i in range(0, len(q)):
+        # Print the base cases
+        if (i < 2):
+            print(f"s{i} = {s[i]}");
+        # Print and calculate the recursive values
+        else:
+            # This comes directly from the Extended Euclidean Algorithm Formula
+            sj = s[i-2] - q[i-1] * s[i-1];
+            # Print the current s value and how it was calculated
+            print(f"s{i} = {s[i-2]} - {q[i-1]} * {s[i-1]} = {sj}");
+            # Add the current value of s to the list of s
+            s.append(sj);
+
+    print("\nTo find t: ")
+    for i in range(0, len(q)):
+        # Print the base cases
+        if (i < 2):
+            print(f"t{i} = {t[i]}");
+        # Print and calculate the recursive values
+        else:
+            # This comes directly from the Extended Euclidean Algorithm Formula
+            tj = t[i-2] - q[i-1] * t[i-1];
+            # Print the current t value and how it was calculated
+            print(f"t{i} = {t[i-2]} - {q[i-1]} * {t[i-1]} = {tj}");
+            # Add the current value of t to the list of t
+            t.append(tj);
+
+    # print a new line to separate the calculation with the check
+    print("");
+    # Check if we need to flip s and t.
+    if(s[-1] * a + t[-1] * b == gcd):
+        # In this case, we don't need to flip s and t
+        # Print the result to the user
+        print("s and t are already in the correct order therefore:");
+        # The last element in the s array is the true value of s
+        print("s = " + str(s[-1]));
+        # The last element in the t array is the true value of t
+        print("t = " + str(t[-1]));
+        # Print the result in the sum product form
+        # 3. Show the final results as "gcd(a, b) = s*a + t*b"
+        print(f"Where gcd({a},{b}) = {s[-1]}*{a} + {t[-1]}*{b} = {gcd}")
+    elif (t[-1] * a + s[-1] * b == gcd):
+        # In this case, we do need to flip s and t
+        # Print the result to the user
+        print("We must flip s and t therefore:");
+        # rather than printing the last element in s we print the last element in t to flip them
+        print("s = " + str(t[-1]));
+        # rather than printing the last element in t we print the last element in s to flip them
+        print("t = " + str(s[-1]));
+        # Print the result in the sum product form
+        # 3. Show the final results as "gcd(a, b) = s*a + t*b" (and make sure to flip s and t)
+        print(f"Where gcd({a},{b}) = {t[-1]}*{a} + {s[-1]}*{b} = {gcd}");
+    else:
+        # If this case is encountered then our calculations went wrong somewhere.
+        print("Something went wrong...");
+
+    # We can return the gcd
+    return gcd;
+
 # 4. Test your program with the following inputs:
-    # 4a. gcd(414, 662)
-    # 4b. gcd(6, 14)
-    # 4c. gcd(24, 36)
-    # 4d. gcd(12, 42)
-    # 4e. gcd(252, 198)
+print("");
+printDividor(45);
+print("Part 3");
+printDividor(45);
+# 4a.
+# Tell the user what problem we are on and then call the gcd function
+print("a) gcd(414, 662)");
+gcdMethod2(414, 662);
+# Print new line
+print("");
+
+# 4b.
+# Print a dividor between this problem and the others
+printDividor();
+# Tell the user what problem we are on and then call the gcd function
+print("b) gcd(6, 14)");
+gcdMethod2(6, 14);
+# Print new line
+print("");
+
+# 4c.
+# Print a dividor between this problem and the others
+printDividor();
+# Tell the user what problem we are on and then call the gcd function
+print("c) gcd(24, 36)");
+gcdMethod2(24, 36);
+# Print new line
+print("");
+
+# 4d.
+# Print a dividor between this problem and the others
+printDividor();
+# Tell the user what problem we are on and then call the gcd function
+print("d) gcd(12, 42)");
+gcdMethod2(12, 42);
+# Print new line
+print("");
+
+# 4e.
+# Print a dividor between this problem and the others
+printDividor();
+# Tell the user what problem we are on and then call the gcd function
+print("e) gcd(252, 198)");
+gcdMethod2(252, 198);
